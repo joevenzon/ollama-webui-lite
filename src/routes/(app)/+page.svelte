@@ -147,6 +147,7 @@
 		}
 
 		await tick();
+		const controller: AbortController = new AbortController();
 		window.scrollTo({ top: document.body.scrollHeight });
 
 		const res = await fetch(`${$settings?.API_BASE_URL ?? OLLAMA_API_BASE_URL}/chat`, {
@@ -154,6 +155,7 @@
 			headers: {
 				"Content-Type": "text/event-stream"
 			},
+			signal: controller.signal,
 			body: JSON.stringify({
 				model: model,
 				messages: messages.map((message) => ({
@@ -187,6 +189,7 @@
 				if (done || stopResponseFlag || _chatId !== $chatId) {
 					responseMessage.done = true;
 					messages = messages;
+					controller.abort();
 					break;
 				}
 
@@ -371,35 +374,6 @@
 
 	const generateChatTitle = async (_chatId, userPrompt) => {
 		if ($settings.titleAutoGenerate ?? true) {
-			console.log("generateChatTitle");
-
-			const res = await fetch(`${$settings?.API_BASE_URL ?? OLLAMA_API_BASE_URL}/generate`, {
-				method: "POST",
-				headers: {
-					"Content-Type": "text/event-stream"
-				},
-				body: JSON.stringify({
-					model: selectedModels[0],
-					prompt: `Generate a brief 3-5 word title for this question, excluding the term 'title.' Then, please reply with only the title: ${userPrompt}`,
-					stream: false
-				})
-			})
-				.then(async (res) => {
-					if (!res.ok) throw await res.json();
-					return res.json();
-				})
-				.catch((error) => {
-					if ("detail" in error) {
-						toast.error(error.detail);
-					}
-					console.log(error);
-					return null;
-				});
-
-			if (res) {
-				await setChatTitle(_chatId, res.response === "" ? "New Chat" : res.response);
-			}
-		} else {
 			await setChatTitle(_chatId, `${userPrompt}`);
 		}
 	};

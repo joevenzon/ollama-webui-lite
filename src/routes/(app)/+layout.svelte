@@ -43,8 +43,9 @@
 	};
 
 	const getDB = async () => {
-		const DB = await openDB("Chats", 1, {
+		const DB = await openDB("Chats", 2, {
 			upgrade(db) {
+				db.deleteObjectStore("chats");
 				const store = db.createObjectStore("chats", {
 					keyPath: "id",
 					autoIncrement: true
